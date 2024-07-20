@@ -42,3 +42,30 @@ def create_artist(artist: schemas.ArtistCreate) -> dict:
     db.commit()
 
     return {"message": "success"}
+
+
+@app.put("/artists/{artist_id}")
+def update_artist(artist_id: int, artist: schemas.ArtistModify) -> dict:
+    db = models.Session()
+
+    stmt = select(models.Artist).filter_by(id=artist_id)
+    artist_db = db.execute(stmt).scalar()
+
+    artist_db.name = artist.name
+
+    db.commit()
+
+    return {"message": "success"}
+
+
+@app.delete("/artists/{artist_id}")
+def delete_artist(airtist_id: int) -> dict:
+    db = models.Session()
+
+    stmt = select(models.Artist).filter_by(id=airtist_id)
+    artist = db.execute(stmt).scalar()
+
+    db.delete(artist)
+    db.commit()
+
+    return {"message": "success"}

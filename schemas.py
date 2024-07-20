@@ -10,6 +10,10 @@ class ArtistCreate(ArtistBase):
     pass
 
 
+class ArtistModify(ArtistBase):
+    pass
+
+
 class Artist(ArtistBase):
     id: int
     created_at: datetime
