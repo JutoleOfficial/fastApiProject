@@ -69,3 +69,15 @@ def delete_artist(airtist_id: int) -> dict:
     db.commit()
 
     return {"message": "success"}
+
+
+@app.post("/albums")
+def create_album(album: schemas.AlbumCreate) -> dict:
+    db = models.Session()
+
+    new_album = models.Album(title=album.title, artist_id=album.artist_id)
+
+    db.add(new_album)
+    db.commit()
+
+    return schemas.Album.model_validate(new_album)

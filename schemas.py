@@ -19,8 +19,6 @@ class Artist(ArtistBase):
     created_at: datetime
     updated_at: datetime
 
-    albums: list["Album"]
-
     class Config:
         from_attributes = True
 
