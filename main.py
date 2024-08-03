@@ -1,17 +1,84 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from typing import Annotated
+from datetime import datetime, timedelta, timezone
 
+import jwt
 import models
 import schemas
+import os
 
 
 app = FastAPI()
+SECRETY_KEY = "JUSEKEY"
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+
+@app.post("/users")
+def create_user(user: schemas.UserCreate) -> dict:
+    db = models.Session()
+
+    new_user = models.User(username=user.username, password=user.password)
+
+    db.add(new_user)
+    db.commit()
+
+    return {"message": "success"}
+
+
+@app.post("/token")
+def create_token(
+    form_data: schemas.UserCreate,
+) -> dict:
+    db = models.Session()
+
+    stmt = select(models.User).filter_by(
+        username=form_data.username, password=form_data.password
+    )
+
+    user = db.execute(stmt).scalar()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    access_token_expires = timedelta(minutes=30)
+
+    token = jwt.encode(
+        {"sub": user.id, "exp": datetime.now(timezone.utc) + access_token_expires},
+        SECRETY_KEY,
+    )
+
+    return {"access_token": token, "token_type": "bearer"}
+
+
+def verify_token(token: Annotated[str, Depends(oauth2_scheme)]):
+    try:
+        payload = jwt.decode(token, SECRETY_KEY, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    db = models.Session()
+    stmt = select(models.User).filter_by(id=payload["sub"])
+    user = db.execute(stmt).scalar()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return user
+
+
+@app.get("/users/me")
+def read_user(user: Annotated[models.User, Depends(verify_token)]) -> dict:
+    return {"username": user.username}
 
 
 @app.get("/artists")

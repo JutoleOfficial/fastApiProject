@@ -41,3 +41,22 @@ class Album(AlbumBase):
 
     class Config:
         from_attributes = True
+
+
+class UserBase(BaseModel):
+    username: str
+    password: str
+
+
+class UserCreate(UserBase):
+    pass
+
+
+class User(UserBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime
+
+    class Config:
+        from_attributes = True
